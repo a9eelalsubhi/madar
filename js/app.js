@@ -6,7 +6,8 @@
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const D = () => S.data;
-  const icon = id => '<svg><use href="#' + id + '"/></svg>';
+  const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const icon =id => '<svg><use href="#' + id + '"/></svg>';
 
   // ---------- التصنيفات ----------
   const CATS = { study: 'دراسة', exam: 'امتحان', health: 'صحة', meeting: 'اجتماع', deen: 'عبادة', sport: 'رياضة', social: 'اجتماعي', match: 'ماتشات', project: 'محتوى ومشاريع', personal: 'شخصي' };
@@ -146,7 +147,7 @@
     const s = evStart(e), en = evEnd(e);
     const cls = e.allDay ? '' : (en < now ? ' past' : (s <= now ? ' now' : ''));
     return '<div class="ev-row' + cls + '" style="--c:' + cvar(e.cat) + '" data-ev="' + e.id + '" tabindex="0" role="button">' +
-      '<div class="t">' + (e.allDay ? 'طول اليوم' : fmtT(s) + '<small>' + fmtT(en) + '</small>') + '</div>' +
+      '<div class="t">' + (e.allDay ? 'طول اليوم' : fmtT(s) + '<small>' + fmtT(en) + '</small>') + '</div><span class="dot"></span>' +
       '<div class="x"><b>' + esc(e.title) + '</b><span>' + CATS[catOk(e.cat)] + (e.remind ? ' · تنبيه قبل ' + remindTxt(e.remind) : '') + '</span></div>' +
       catIcon(e.cat) + '</div>';
   }
@@ -164,7 +165,7 @@
     for (const it of items) {
       if (!placed && it.t > now.getTime()) { html += '<div class="nowline">الحين ' + fmtT(now) + '</div>'; placed = true; }
       if (it.e) html += evRow(it.e, now);
-      else html += '<div class="ev-row prayer' + (it.t < now.getTime() ? ' past' : '') + '" style="--c:var(--c-deen)"><div class="t">' + fmtT(new Date(it.t)) + '</div><div class="x"><b>' + PR.NAMES[it.prayer] + '</b></div>' + catIcon('deen') + '</div>';
+      else html += '<div class="ev-row prayer' + (it.t < now.getTime() ? ' past' : '') + '" style="--c:var(--c-deen)"><div class="t">' + fmtT(new Date(it.t)) + '</div><span class="dot"></span><div class="x"><b>' + PR.NAMES[it.prayer] + '</b></div>' + catIcon('deen') + '</div>';
     }
     if (!placed) html += '<div class="nowline">الحين ' + fmtT(now) + '</div>';
     if (!evs.length) html = '<div class="empty" style="padding:10px">' + icon('i-cal') + 'ما فيه مواعيد ' + (isToday ? 'اليوم' : 'هذا اليوم') + '. قول للمساعد أو اضغط «موعد».</div>' + html;
@@ -289,8 +290,8 @@
     const all = modLectures(), n = all.length;
     const st = all.filter(l => l.study).length, rv = all.filter(l => l.rev).length, mq = all.filter(l => l.mcq).length;
     $('#modSub').textContent = n ? 'باقي ' + (n - st) + ' محاضرة ما ذاكرتها من ' + n : 'أضف محاضراتك';
-    $('#prog3').innerHTML = [['مذاكرة', st, 'var(--ok)'], ['مراجعة', rv, 'var(--warn)'], ['MCQ', mq, 'var(--c-study)']].map(([t, v, c]) =>
-      '<div><div class="t"><span>' + t + '</span><b>' + v + '<small>/' + n + '</small></b></div><div class="bar"><i style="width:' + pct(v, n) + '%;--c:' + c + '"></i></div></div>').join('');
+    $('#prog3').innerHTML = [['مذاكرة', st, 'var(--mint)'], ['مراجعة', rv, 'var(--amber)'], ['MCQ', mq, 'var(--sky)']].map(([t, v, c]) =>
+      '<div style="--c:' + c + '"><div class="t"><span>' + t + '</span><b>' + v + '<small>/' + n + '</small></b></div><div class="bar"><i style="width:' + pct(v, n) + '%"></i></div></div>').join('');
     const used = D().subjects.filter(s => all.some(l => l.subject === s.id));
     if (subjFilter !== '*' && !used.some(s => s.id === subjFilter)) subjFilter = '*';
     $('#subjChips').innerHTML = '<button data-sf="*" class="' + (subjFilter === '*' ? 'on' : '') + '">الكل</button>' +
@@ -324,7 +325,10 @@
     const row = e.target.closest('[data-lec]'); if (!row) return;
     const l = D().lectures.find(x => x.id === row.dataset.lec); if (!l) return;
     const ck = e.target.closest('[data-k]');
-    if (ck) { const k = ck.dataset.k; l[k] = !l[k]; S.save(); if (l[k]) toast({ study: 'ذاكرت ', rev: 'راجعت ', mcq: 'حليت أسئلة ' }[k] + l.title); return; }
+    if (ck) {
+      const k = ck.dataset.k; l[k] = !l[k]; S.save();
+      if (l[k] && window.gsap && !reduceMotion) { const b = $('[data-lec="' + l.id + '"] [data-k="' + k + '"]'); if (b) gsap.fromTo(b, { scale: .6 }, { scale: 1, duration: .5, ease: 'back.out(3)' }); }
+      if (l[k]) toast({ study: 'ذاكرت ', rev: 'راجعت ', mcq: 'حليت أسئلة ' }[k] + l.title); return; }
     if (e.target.closest('[data-edit]')) openLecture(l);
   });
 
@@ -656,4 +660,16 @@
   setInterval(loadFixtures, 15 * 60000);
   checkReminders();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => { });
+
+  // ==================== الحركة (GSAP) ====================
+  // لحظة وحدة: البطاقات تطفو لمكانها بالترتيب أول ما تفتح. المحتوى ظاهر من الأساس لو GSAP ما وصل.
+  window.addEventListener('load', () => {
+    if (!window.gsap || reduceMotion) return;
+    const cards = $$('.topbar > *, .glass, .fx');
+    const tl = gsap.timeline();
+    tl.from(cards, { y: 14, opacity: .35, scale: .985, duration: .8, ease: 'expo.out', stagger: .045, clearProps: 'transform,opacity' })
+      .from('.prog3 .bar i', { width: 0, duration: 1.1, ease: 'expo.out' }, .25);
+    // لو الصفحة مخفية وقت الفتح (الحركة توقف)، نكمّلها عشان ما يبقى شي باهت
+    setTimeout(() => { if (tl.progress() < 1) tl.progress(1); }, 1800);
+  });
 })();

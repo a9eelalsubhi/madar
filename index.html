@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>مدار</title>
   <meta name="description" content="لوحتي: يومي، محاضراتي، مهامي، الصلاة والماتشات، ومساعد يفهم كلامي — في شاشة وحدة.">
-  <meta name="theme-color" content="#1c1a17">
+  <meta name="theme-color" content="#262a52">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="bg" aria-hidden="true"></div>
+  <div class="sky" aria-hidden="true"><canvas id="stars"></canvas></div>
 
   <div class="shell">
     <!-- الشريط العلوي: الاسم، والمساعد في الوسط -->
@@ -45,22 +45,22 @@
     <main class="board" id="board">
       <!-- العمود ١: الوقت والصلاة والحديث -->
       <div class="col col-time" data-panel="الوقت">
-        <section class="glass clock-card">
+        <section class="glass clock-card" style="--tint:#8b7bff">
           <div class="big-clock"><span id="clock">--:--</span><small id="ampm"></small></div>
           <p class="big-date" id="gdate"></p>
           <p class="hij" id="hdate"></p>
         </section>
-        <section class="glass pray-card" aria-label="مواقيت الصلاة">
+        <section class="glass pray-card" style="--tint:#ffaa3b" aria-label="مواقيت الصلاة">
           <div class="p-head"><h2>مواقيت الصلاة</h2><span class="muted">مكة المكرمة</span></div>
           <p class="p-next" id="prayNext"></p>
           <div class="p-grid" id="prayGrid"></div>
         </section>
-        <section class="glass hadith-card" id="hadithCard" aria-label="حديث اليوم"></section>
+        <section class="glass hadith-card" style="--tint:#ff6f9f" id="hadithCard" aria-label="حديث اليوم"></section>
       </div>
 
       <!-- العمود ٢: اليوم -->
       <div class="col col-day" data-panel="اليوم">
-        <section class="glass day-card">
+        <section class="glass day-card" style="--tint:#3fa9ff">
           <div class="next" id="nextCard"></div>
           <div class="day-head">
             <div><h2 id="dayTitle"></h2><p class="muted" id="daySub"></p></div>
@@ -76,7 +76,7 @@
 
       <!-- العمود ٣: المحاضرات -->
       <div class="col col-lec" data-panel="المحاضرات">
-        <section class="glass lec-card">
+        <section class="glass lec-card" style="--tint:#46d39a">
           <div class="lec-head">
             <div class="lec-title"><h2 id="modTitle">المحاضرات</h2><p class="muted" id="modSub"></p></div>
             <select class="mini-select" id="modSelect" aria-label="الموديول"></select>
@@ -94,7 +94,7 @@
 
       <!-- العمود ٤: التقويم والمهام والماتشات -->
       <div class="col col-side" data-panel="التقويم">
-        <section class="glass cal-card">
+        <section class="glass cal-card" style="--tint:#ff5fb0">
           <div class="cal-head">
             <button class="icon-btn sm" id="calPrev" aria-label="الشهر السابق"><svg><use href="#i-chev-r"/></svg></button>
             <div class="cal-t"><h2 id="calTitle"></h2><p class="muted" id="calHijri"></p></div>
@@ -103,7 +103,7 @@
           <div class="cal-dow"><span>ح</span><span>ن</span><span>ث</span><span>ر</span><span>خ</span><span>ج</span><span>س</span></div>
           <div class="cal-grid" id="calGrid"></div>
         </section>
-        <section class="glass tasks-card">
+        <section class="glass tasks-card" style="--tint:#2ed3c6">
           <div class="t-head"><h2>المهام</h2><span class="muted" id="taskCount"></span></div>
           <form class="quickadd" id="taskForm">
             <input placeholder="وش في بالك؟" name="t" aria-label="مهمة جديدة"><button class="icon-btn sm" aria-label="إضافة"><svg><use href="#i-plus"/></svg></button>
@@ -245,6 +245,8 @@
     </defs>
   </svg>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <script src="js/sky.js"></script>
   <script src="js/parser.js"></script>
   <script src="js/prayer.js"></script>
   <script src="js/store.js"></script>
