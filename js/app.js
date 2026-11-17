@@ -647,7 +647,7 @@
   }
 
   // ==================== الإعدادات ====================
-  $('#btnSettings').onclick = () => { $('#nameInput').value = D().name || ''; $('#settingsDlg').showModal(); };
+  $('#btnSettings').onclick = () => { $('#nameInput').value = D().name || ''; renderSyncSetting(); $('#settingsDlg').showModal(); };
   $('#nameInput').addEventListener('change', e => { D().name = e.target.value.trim() || 'أصيل'; S.save(); });
   $('#btnNotif').onclick = async () => {
     if (!('Notification' in window)) { toast('التنبيهات تحتاج تثبيت التطبيق على الشاشة الرئيسية'); return; }
@@ -805,19 +805,34 @@
   function renderSync(s) {
     const el = $('#syncState'); el.dataset.s = s; el.querySelector('span').textContent = SYNC_TXT[s] || '';
   }
-  $('#btnSyncShare').onclick = async () => {
-    const link = window.Sync ? Sync.link() : '';
-    if (!link) return;
-    try { if (navigator.share) { await navigator.share({ title: 'ربط مدار', url: link }); return; } } catch (e) { }
-    try { await navigator.clipboard.writeText(link); toast('نسخت الرابط، افتحه في الجوال مرة وحدة'); }
-    catch (e) { prompt('انسخ هذا الرابط وافتحه في الجهاز الثاني:', link); }
+  function renderSyncSetting() {
+    const inn = window.Sync && Sync.signedIn;
+    $('#syncInfo').textContent = inn ? 'هذا الجهاز داخل ✓ أي تعديل يتزامن لحاله مع أجهزتك.' : 'ادخل بكلمة سر مدار وتتزامن أجهزتك لحالها.';
+    $('#btnSyncAccount').textContent = inn ? 'تسجيل خروج' : 'دخول';
+  }
+  $('#btnSyncAccount').onclick = () => {
+    if (window.Sync && Sync.signedIn) { if (confirm('تسجيل خروج من المزامنة في هذا الجهاز؟ بياناتك تبقى.')) { Sync.logout(); renderSyncSetting(); } }
+    else { $('#settingsDlg').close(); $('#loginDlg').showModal(); }
   };
+  $('#loginLater').onclick = $('#loginClose').onclick = () => $('#loginDlg').close();
+  $('#loginForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const pass = e.target.pass.value, err = $('#loginErr'), go = $('#loginGo');
+    if (pass.trim().length < 6) { err.textContent = 'كلمة السر لازم تكون ٦ حروف أو أكثر.'; return; }
+    go.disabled = true; err.textContent = 'لحظة…';
+    try {
+      const had = await Sync.login(pass);
+      $('#loginDlg').close(); e.target.reset(); err.textContent = '';
+      toast(had ? 'دخلت ✓ جبت بياناتك من أجهزتك الثانية ودمجتها' : 'تم ✓ ادخل بنفس كلمة السر في جوالك');
+    } catch (x) { err.textContent = navigator.onLine ? 'ما قدرت أتصل، جرب مرة ثانية.' : 'تحتاج نت أول مرة بس.'; }
+    go.disabled = false;
+  });
 
   // ==================== الرسم ====================
   function render() { renderTime(); renderNext(); renderHadith(); renderCalendar(); renderDay(); renderExam(); renderLectures(); renderTasks(); renderHabits(); renderNotes(); }
   S.onChange(render);
   render(); renderFixtures(); loadFixtures();
-  if (window.Sync) { Sync.onState(renderSync); Sync.start(); }
+  if (window.Sync) { Sync.onState(renderSync); if (!Sync.start()) setTimeout(() => $('#loginDlg').showModal(), 700); }
   maybeFridaySummary();
   say('هلا ' + esc(D().name || 'أصيل') + '. قول لي مواعيدك أو أي شي في بالك وأنا أرتبه.<br><small class="muted">أفهم: «الخميس الجاي الساعة ٤ العصر»، «وش عندي بكرة؟»، «خلصت مذاكرة Coordination»، «متى ماتش الاتحاد؟»</small>');
   replies.hidden = true;

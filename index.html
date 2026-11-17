@@ -134,6 +134,17 @@
     </main>
   </div>
 
+  <!-- الدخول للمزامنة -->
+  <dialog id="loginDlg" class="sheet">
+    <form id="loginForm">
+      <header class="sheet-h"><h2>كلمة سر مدار</h2><button type="button" value="cancel" class="icon-btn" id="loginClose" aria-label="إغلاق"><svg><use href="#i-x"/></svg></button></header>
+      <p class="muted" style="font-size:14px;line-height:1.7">اكتب كلمة سر تختارها (نفسها في الجوال والبي سي). تكتبها <b>مرة وحدة بس</b> في كل جهاز، وبعدها أي شي تسويه في جهاز يطلع في الثاني لحاله.</p>
+      <label>كلمة السر<input type="password" name="pass" autocomplete="current-password" minlength="6" required placeholder="٦ حروف أو أكثر"></label>
+      <p class="muted small" id="loginErr" role="alert"></p>
+      <footer class="sheet-f"><button type="button" class="btn ghost" id="loginLater">بعدين</button><button class="btn" id="loginGo">دخول</button></footer>
+    </form>
+  </dialog>
+
   <!-- ملخص الأسبوع -->
   <dialog id="weekDlg" class="sheet wide">
     <form method="dialog">
@@ -205,8 +216,8 @@
     <form method="dialog">
       <header class="sheet-h"><h2>الإعدادات</h2><button value="cancel" class="icon-btn" aria-label="إغلاق"><svg><use href="#i-x"/></svg></button></header>
       <div class="setting">
-        <div><b>ربط الجوال والبي سي</b><p class="muted" id="syncInfo">افتح هذا الرابط مرة وحدة في الجهاز الثاني، وبعدها كل شي يتزامن لحاله.</p></div>
-        <div class="btns"><button type="button" class="btn sm" id="btnSyncShare"><svg><use href="#i-share"/></svg>رابط الربط</button></div>
+        <div><b>المزامنة بين أجهزتك</b><p class="muted" id="syncInfo"></p></div>
+        <div class="btns"><button type="button" class="btn sm" id="btnSyncAccount"></button></div>
       </div>
       <div class="setting">
         <div><b>اسمك</b><p class="muted">اللي يطلع في الترحيب</p></div>
