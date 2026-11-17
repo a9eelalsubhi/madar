@@ -136,6 +136,7 @@
   root.Sync = {
     start, login, logout, pull, push,
     get state() { return state; },
+    get code() { return code; },
     get signedIn() { return !!code && ls.get(MODE_KEY) === 'pass'; },
     onState(f) { listeners.push(f); }
   };

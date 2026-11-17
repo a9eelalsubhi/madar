@@ -516,9 +516,108 @@
     }
     return best;
   }
+  // ==================== المساعد الذكي (Gemini) ====================
+  // لما يكون فيه نت والجهاز داخل بكلمة السر: الكلام يروح لـ Gemini عن طريق سيرفر مدار
+  // ويرجع رد + أوامر نطبقها. بدون نت: المساعد العادي داخل الجهاز.
+  const AI_URL = 'https://iorqgtgszskthfsmizxo.supabase.co/functions/v1/madar-ai';
+  let aiWarned = false;
+  const plain = h => { const d = document.createElement('div'); d.innerHTML = h; return d.textContent.trim(); };
+  function aiContext() {
+    const now = new Date(), from = addDays(sod(now), -7), to = addDays(sod(now), 90);
+    const t = d => pad(d.getHours()) + ':' + pad(d.getMinutes());
+    return {
+      events: D().events.filter(e => evStart(e) >= from && evStart(e) <= to).map(e => ({ id: e.id, title: e.title, cat: e.cat, date: ymd(evStart(e)), start: e.allDay ? null : t(evStart(e)), end: e.allDay || !e.end ? null : t(evEnd(e)), allDay: !!e.allDay })),
+      tasks: D().tasks.filter(x => !x.done).map(x => ({ id: x.id, title: x.title })),
+      module: curModule(),
+      lectures: modLectures().map(l => ({ id: l.id, title: l.title, subject: l.subject, week: l.week, study: !!l.study, rev: !!l.rev, mcq: !!l.mcq })),
+      subjects: D().subjects.map(x => x.id),
+      habits: D().habits.map(h => ({ id: h.id, name: h.name, today: hlog(todayKey(), h.id), target: h.target || 1 }))
+    };
+  }
+  function aiNow() {
+    const n = new Date();
+    return ymd(n) + ' ' + P.DAY_NAMES[n.getDay()] + ' ' + pad(n.getHours()) + ':' + pad(n.getMinutes()) + ' (توقيت مكة)';
+  }
+  const atTime = (date, hm) => { const d = fromYmd(date); if (hm) { const [h, m] = hm.split(':').map(Number); d.setHours(h || 0, m || 0, 0, 0); } return d; };
+  function applyAI(actions) {
+    const added = [];
+    for (const a of actions) {
+      try {
+        if (a.type === 'add_event' && a.title && a.date) {
+          const allDay = !!a.allDay || !a.start, s = atTime(a.date, a.start);
+          const en = allDay ? null : (a.end ? atTime(a.date, a.end) : new Date(s.getTime() + 3600000));
+          const cat = CATS[a.cat] ? a.cat : 'personal';
+          const ev = { id: S.uid(), title: String(a.title), cat, start: s.toISOString(), end: en ? en.toISOString() : null, allDay, remind: a.remind != null ? +a.remind : (allDay ? 0 : ({ exam: 1440, health: 60, meeting: 15 }[cat] || 30)), notes: '' };
+          D().events.push(ev); added.push(ev);
+        } else if (a.type === 'update_event') {
+          const ev = D().events.find(e => e.id === a.id); if (!ev) continue;
+          const date = a.date || ymd(evStart(ev)), cur = d => pad(d.getHours()) + ':' + pad(d.getMinutes());
+          if (a.title) ev.title = String(a.title);
+          if (CATS[a.cat]) ev.cat = a.cat;
+          if (a.remind != null) ev.remind = +a.remind;
+          if (a.allDay) { ev.allDay = true; ev.start = atTime(date).toISOString(); ev.end = null; }
+          else if (a.date || a.start || a.end) {
+            const st = atTime(date, a.start || (ev.allDay ? '09:00' : cur(evStart(ev))));
+            const dur = ev.allDay ? 3600000 : (evEnd(ev) - evStart(ev));
+            ev.allDay = false; ev.start = st.toISOString(); ev.end = (a.end ? atTime(date, a.end) : new Date(st.getTime() + dur)).toISOString();
+          }
+        } else if (a.type === 'delete_event') {
+          D().events = D().events.filter(e => e.id !== a.id);
+        } else if (a.type === 'add_task' && a.title) {
+          D().tasks.push({ id: S.uid(), title: String(a.title), done: false, date: null, created: new Date().toISOString() });
+        } else if (a.type === 'complete_task') {
+          const t = D().tasks.find(x => x.id === a.id); if (t) { t.done = true; t.doneAt = new Date().toISOString(); }
+        } else if (a.type === 'lecture_check') {
+          const l = D().lectures.find(x => x.id === a.id); if (!l || !['study', 'rev', 'mcq'].includes(a.field)) continue;
+          l[a.field] = a.value !== false; l.at = l.at || {}; if (l[a.field]) l.at[a.field] = new Date().toISOString();
+        } else if (a.type === 'add_lecture' && a.title) {
+          const sub = D().subjects.some(x => x.id === a.subject) ? a.subject : D().subjects[0].id;
+          D().lectures.push({ id: S.uid(), title: String(a.title), subject: sub, week: a.week || '', module: curModule() || 'بدون موديول', study: false, rev: false, mcq: false, notes: '' });
+        } else if (a.type === 'habit' && D().habits.some(h => h.id === a.id)) {
+          const k = todayKey(); D().habitLog[k] = D().habitLog[k] || {}; D().habitLog[k][a.id] = Math.max(0, +a.value || 0);
+        }
+      } catch (err) { console.warn('ai action', a, err); }
+    }
+    if (added.length) { const f = evStart(added[0]); selDay = sod(f); calMonth = new Date(f.getFullYear(), f.getMonth(), 1); }
+    return added;
+  }
+  async function handleAI(text) {
+    const history = Array.from(chat.children).slice(-7, -1).map(m => ({ role: m.classList.contains('me') ? 'user' : 'bot', text: plain(m.innerHTML) }));
+    const thinking = say('<span class="muted">أفكر…</span>');
+    let res;
+    try {
+      const r = await fetch(AI_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: Sync.code, text, now: aiNow(), context: aiContext(), history }) });
+      res = await r.json();
+      if (!r.ok) throw new Error((res && res.error) || 'http');
+    } catch (err) {
+      thinking.remove();
+      if (String(err.message) === 'no_key' && !aiWarned) { aiWarned = true; say('<small class="muted">الذكاء الاصطناعي ينتظر مفتاح Gemini، فاستخدمت المساعد العادي.</small>'); }
+      return handleLocal(text, true);
+    }
+    thinking.remove();
+    const acts = Array.isArray(res.actions) ? res.actions : [];
+    if (!acts.length) { say(esc(res.reply || 'ما فهمت عليك، وضح لي أكثر؟')); return; }
+    const snap = snapshot();
+    const added = applyAI(acts);
+    S.save();
+    const extra = added.length === 1 ? '<button data-edit>' + icon('i-edit') + 'تعديل</button><button data-ics>' + icon('i-bell') + 'للآيفون</button>' : '';
+    const m = say(esc(res.reply || 'تم ✓') + added.map(evBlock).join('') + '<div class="acts">' + extra + undoBtn + '</div>');
+    m.querySelector('[data-undo]').onclick = () => { restore(snap); say('رجعتها زي ما كانت.'); };
+    if (added.length === 1) {
+      const id = added[0].id;
+      m.querySelector('[data-edit]').onclick = () => { const x = D().events.find(e => e.id === id); if (x) openEvent(x); };
+      m.querySelector('[data-ics]').onclick = () => { const x = D().events.find(e => e.id === id); if (x) downloadIcs([x], x.title); };
+    }
+  }
   function handle(text) {
+    text = String(text || '').trim(); if (!text) return;
+    if (navigator.onLine && window.Sync && Sync.signedIn) { say(esc(text), 'me'); return handleAI(text); }
+    return handleLocal(text);
+  }
+
+  function handleLocal(text, echoed) {
     text = text.trim(); if (!text) return;
-    say(esc(text), 'me');
+    if (!echoed) say(esc(text), 'me');
     const ct = P.clean(text);
     if (/^(?:هلا|مرحبا|السلام عليكم|سلام|هاي|اهلين)/.test(ct)) { say('هلا والله. قول لي وش عندك وأنا أرتبه.'); return; }
     if (/^(?:شكرا|يعطيك العافيه|مشكور|تسلم)/.test(ct)) { say('العفو، بالتوفيق.'); return; }
@@ -582,6 +681,11 @@
       D().lectures.push(l); S.save();
       const m = withUndo('سجلت المحاضرة «' + esc(l.title) + '» في ' + esc(subjOf(l.subject).name), '<button data-edit>' + icon('i-edit') + 'تعديل</button>');
       m.querySelector('[data-edit]').onclick = () => openLecture(l); return;
+    }
+    // طلب ناقص مثل «ضيف موعدين»: نسأل بدل ما نخمن
+    if (!r.hasDate && !r.hasTime && /^(?:ضيف|اضف|أضف|حط|سجل|ابي|ابغى)?\s*(?:لي\s*)?(?:موعد|موعدين|مواعيد|اجتماع|محاضره|محاضرة)\s*[.!]?$/.test(ct)) {
+      say('أبشر، بس قول لي التفاصيل: وش الموعد ومتى؟ مثلاً «موعد أسنان الخميس الساعة ٤ العصر». لو أكثر من موعد قولهم واحد واحد.');
+      return;
     }
     if (r.intent === 'task' || (!r.hasDate && !r.hasTime)) {
       const title = r.intent === 'task' ? ct.replace(/^(?:مهم[هة]|تاسك|task)\s*:?\s*/i, '') : r.title;
