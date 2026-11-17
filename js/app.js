@@ -337,7 +337,7 @@
     const l = D().lectures.find(x => x.id === row.dataset.lec); if (!l) return;
     const ck = e.target.closest('[data-k]');
     if (ck) {
-      const k = ck.dataset.k; l[k] = !l[k]; S.save();
+      const k = ck.dataset.k; l[k] = !l[k]; l.at = l.at || {}; if (l[k]) l.at[k] = new Date().toISOString(); S.save();
       if (l[k] && window.gsap && !reduceMotion) { const b = $('[data-lec="' + l.id + '"] [data-k="' + k + '"]'); if (b) gsap.fromTo(b, { scale: .6 }, { scale: 1, duration: .5, ease: 'back.out(3)' }); }
       if (l[k]) toast({ study: 'ذاكرت ', rev: 'راجعت ', mcq: 'حليت أسئلة ' }[k] + l.title); return; }
     if (e.target.closest('[data-edit]')) openLecture(l);
@@ -382,6 +382,8 @@
     const obj = { title: f.title.value.trim(), subject: f.subject.value, week: f.week.value, module: f.module.value.trim() || curModule() || 'بدون موديول',
       study: f.study.checked, rev: f.rev.checked, mcq: f.mcq.checked, notes: f.notes.value.trim(), link: f.link.value.trim() };
     let l = editingLec;
+    const stamp = new Date().toISOString(), prev = l ? { study: l.study, rev: l.rev, mcq: l.mcq } : {};
+    obj.at = Object.assign({}, l && l.at); ["study", "rev", "mcq"].forEach(k => { if (obj[k] && !prev[k]) obj.at[k] = stamp; });
     if (l) Object.assign(l, obj); else { l = Object.assign({ id: S.uid() }, obj); D().lectures.push(l); }
     const file = f.file.files[0];
     if (file) {
@@ -524,6 +526,28 @@
       say(which.map(t => { const r = fx[t.id] && fx[t.id].rows[0]; return r ? t.name + ': ' + esc(arName(r.home.name)) + ' × ' + esc(arName(r.away.name)) + ' · ' + fxFmt.format(new Date(r.date)) + (r.timeValid ? ' ' + tTxt(new Date(r.date)) : '') : t.name + ': ما عندي موعد للحين'; }).join('<br>'));
       return;
     }
+    // العادات والملاحظات والامتحان
+    const snap0 = snapshot();
+    const undo0 = html => { const m = say(html + '<div class="acts">' + undoBtn + '</div>'); m.querySelector('[data-undo]').onclick = () => { restore(snap0); say('رجعتها زي ما كانت.'); }; };
+    let mm;
+    if ((mm = ct.match(/^(?:ملاحظ[هة]|ملاحظه|نوت|note|دون|سجل ملاحظ[هة])\s*:?\s*([\s\S]+)/i))) { addNote(mm[1]); undo0('حفظتها في الملاحظات ✓'); return; }
+    if (/شربت|شرب(?:ت)? (?:كاس|كوب|ماء|مويه)/.test(ct) && /ماء|مويه|موي|كاس|كوب|كاسات|اكواب/.test(ct)) {
+      const n = +(ct.match(/(\d+)/) || [])[1] || (/كاسين|كوبين/.test(ct) ? 2 : 1);
+      const cur = hlog(todayKey(), 'water'); setHabit('water', cur + n);
+      undo0('سجلت ' + n + ' كوب ماء ✓ صرت ' + (cur + n) + ' من ' + ((D().habits.find(h => h.id === 'water') || {}).target || 8));
+      return;
+    }
+    const HAB = [[/اذكار الصباح|أذكار الصباح|ذكار الصبح/, 'azkar-am'], [/اذكار المساء|أذكار المساء|اذكار المسا/, 'azkar-pm'], [/(?:قريت|قرأت|قريت ورد|ختمت).*(?:قران|قرآن|ورد|جز)/, 'quran'], [/تمرنت|رحت (?:الجيم|النادي)|لعبت (?:كوره|بادل|رياضه)|مشيت|خلصت (?:التمرين|الجيم)/, 'sport']];
+    if (/^(?:قلت|خلصت|قريت|قرأت|سويت|تمرنت|رحت|لعبت|مشيت|ختمت)/.test(ct)) {
+      for (const [re, id] of HAB) if (re.test(ct)) { setHabit(id, 1); const h = D().habits.find(x => x.id === id); undo0('عاش! حطيت ✓ على «' + esc(h ? h.name : id) + '»'); return; }
+    }
+    if (/(?:كم|متى).*(?:امتحان|اختبار)/.test(ct)) {
+      const ex = D().events.filter(e => e.cat === 'exam' && evEnd(e) > new Date()).sort((a, b) => evStart(a) - evStart(b))[0];
+      if (!ex) { say('ما عندك امتحان مسجل. قول مثلاً: «امتحان NBS يوم ٢٠ ديسمبر».'); return; }
+      const days = Math.ceil((sod(evStart(ex)) - sod(new Date())) / 86400000), left = modLectures().filter(l => !l.study).length;
+      say('باقي <b>' + days + '</b> يوم على «' + esc(ex.title) + '». باقي ' + left + ' محاضرة، يعني تقريباً ' + Math.ceil(left / Math.max(1, days)) + ' باليوم.');
+      return;
+    }
     const r = P.parse(text), snap = snapshot();
     const withUndo = (html, extra) => { const m = say(html + '<div class="acts">' + (extra || '') + undoBtn + '</div>'); m.querySelector('[data-undo]').onclick = () => { restore(snap); say('رجعتها زي ما كانت.'); }; return m; };
 
@@ -544,7 +568,7 @@
       const k = /راجعت|مراجع/.test(ct) ? 'rev' : /حليت|اسئل|mcq|كويز/i.test(ct) ? 'mcq' : 'study';
       const q = text.replace(/(?:خلصت|انهيت|أنهيت|ذاكرت|راجعت|حليت|مذاكرة|مراجعة|اسئلة|أسئلة)/g, '');
       const lec = bestMatch(D().lectures, q, l => l.title + ' ' + subjOf(l.subject).name + ' ' + subjOf(l.subject).ar);
-      if (lec) { lec[k] = true; S.save(); withUndo({ study: 'حطيت ✓ مذاكرة على', rev: 'حطيت ✓ مراجعة على', mcq: 'حطيت ✓ أسئلة على' }[k] + ' «' + esc(lec.title) + '»'); return; }
+      if (lec) { lec[k] = true; lec.at = lec.at || {}; lec.at[k] = new Date().toISOString(); S.save(); withUndo({ study: 'حطيت ✓ مذاكرة على', rev: 'حطيت ✓ مراجعة على', mcq: 'حطيت ✓ أسئلة على' }[k] + ' «' + esc(lec.title) + '»'); return; }
       const t = bestMatch(D().tasks.filter(x => !x.done), q, x => x.title);
       if (t) { t.done = true; t.doneAt = new Date().toISOString(); S.save(); withUndo('خلصت «' + esc(t.title) + '»'); return; }
       say('ما لقيت محاضرة أو مهمة بهذا الاسم. اكتب جزء من اسمها بالإنجليزي، مثلاً «خلصت مذاكرة Coordination».'); return;
@@ -653,10 +677,148 @@
 
   // ==================== الجوال: نقاط الأقسام ====================
 
+  // ==================== العادات اليومية ====================
+  const todayKey = () => ymd(new Date());
+  const hlog = (k, id) => ((D().habitLog[k] || {})[id]) || 0;
+  const habitDone = (h, k) => h.type === 'count' ? hlog(k, h.id) >= (h.target || 1) : !!hlog(k, h.id);
+  function streak(h) {
+    let n = 0, d = sod(new Date());
+    if (!habitDone(h, ymd(d))) d = addDays(d, -1); // اليوم لسا ما خلص
+    while (habitDone(h, ymd(d)) && n < 999) { n++; d = addDays(d, -1); }
+    return n;
+  }
+  function setHabit(id, val) {
+    const k = todayKey(); D().habitLog[k] = D().habitLog[k] || {};
+    D().habitLog[k][id] = val; S.save();
+  }
+  function renderHabits() {
+    const k = todayKey(), hs = D().habits;
+    const done = hs.filter(h => habitDone(h, k)).length;
+    $('#habitCount').textContent = done + ' من ' + hs.length;
+    $('#habits').innerHTML = hs.map(h => {
+      const v = hlog(k, h.id), ok = habitDone(h, k), st = streak(h);
+      const week = Array.from({ length: 7 }, (_, i) => { const dk = ymd(addDays(new Date(), i - 6)); return '<i class="' + (habitDone(h, dk) ? 'on' : '') + '"></i>'; }).join('');
+      const ctl = h.type === 'count'
+        ? '<div class="cups">' + Array.from({ length: h.target || 8 }, (_, i) => '<button class="cup' + (i < v ? ' on' : '') + '" data-cup="' + (i + 1) + '" aria-label="' + (i + 1) + ' أكواب"></button>').join('') + '</div>'
+        : '';
+      return '<div class="habit' + (ok ? ' ok' : '') + '" data-h="' + h.id + '">' +
+        (h.type === 'count' ? '<span class="h-ic">' + icon(h.icon) + '</span>' : '<button class="tick' + (ok ? ' on' : '') + '" data-ht aria-label="' + esc(h.name) + '">' + icon('i-tick') + '</button>') +
+        '<div class="h-main"><b>' + esc(h.name) + (h.type === 'count' ? ' <small>' + v + '/' + (h.target || 8) + '</small>' : '') + '</b>' + ctl + '</div>' +
+        '<span class="h-week" title="آخر ٧ أيام">' + week + '</span>' +
+        (st ? '<span class="streak" title="أيام متتالية">' + icon('i-flame') + st + '</span>' : '') + '</div>';
+    }).join('');
+  }
+  $('#habits').addEventListener('click', e => {
+    const row = e.target.closest('[data-h]'); if (!row) return;
+    const h = D().habits.find(x => x.id === row.dataset.h); if (!h) return;
+    const cup = e.target.closest('[data-cup]');
+    if (cup) { const n = +cup.dataset.cup, cur = hlog(todayKey(), h.id); setHabit(h.id, cur === n ? n - 1 : n); return; }
+    if (e.target.closest('[data-ht]')) { const on = !hlog(todayKey(), h.id); setHabit(h.id, on ? 1 : 0); if (on) toast('عاش! ' + h.name + ' ✓'); }
+  });
+
+  // ==================== عد تنازلي للامتحان ====================
+  function renderExam() {
+    const now = new Date();
+    const exams = D().events.filter(e => e.cat === 'exam' && evEnd(e) > now).sort((a, b) => evStart(a) - evStart(b));
+    const card = $('#examCard');
+    const left = modLectures().filter(l => !l.study).length;
+    if (!exams.length) {
+      card.innerHTML = '<div class="exam-empty">' + icon('c-exam') + '<span>حدد موعد امتحانك وأحسب لك كم محاضرة تذاكر كل يوم</span><button class="btn ghost sm" data-add-exam>' + icon('i-plus') + 'امتحان</button></div>';
+      return;
+    }
+    const ex = exams[0], s = evStart(ex);
+    const days = Math.max(0, Math.ceil((sod(s) - sod(now)) / 86400000));
+    const perDay = days > 0 ? Math.ceil(left / days) : left;
+    card.innerHTML = '<div class="exam-main" data-ev="' + ex.id + '" role="button" tabindex="0">' +
+      '<div class="exam-days"><b>' + days + '</b><small>' + (days === 1 ? 'يوم' : days === 2 ? 'يومين' : 'يوم') + '</small></div>' +
+      '<div class="exam-txt"><span class="muted">' + (days === 0 ? 'الامتحان اليوم' : 'باقي على') + '</span><b>' + esc(ex.title) + '</b><span class="muted">' + dayLabel(s) + (ex.allDay ? '' : ' · ' + fmtT(s)) + '</span></div>' +
+      '<div class="exam-plan">' + (left ? '<b>' + perDay + '</b><small>محاضرة باليوم<br>عشان تخلص الـ' + left + ' الباقية</small>' : '<small>ذاكرت كل المحاضرات 🎉<br>ركز على المراجعة</small>') + '</div></div>' +
+      (exams.length > 1 ? '<p class="exam-more muted">بعده: ' + exams.slice(1, 3).map(x => esc(x.title) + ' (' + dayLabel(evStart(x)) + ')').join(' · ') + '</p>' : '');
+  }
+  document.addEventListener('click', e => {
+    if (!e.target.closest('[data-add-exam]')) return;
+    openEvent(null, addDays(new Date(), 14));
+    pickedCat = 'exam'; renderCatPick(); evForm.allDay.checked = true; toggleTimes(); evForm.title.value = 'امتحان ' + (curModule() || '');
+    evForm.remind.value = '1440';
+  });
+
+  // ==================== ملاحظات سريعة ====================
+  const ago = iso => {
+    const m = Math.round((Date.now() - new Date(iso)) / 60000);
+    if (m < 1) return 'الحين'; if (m < 60) return 'قبل ' + m + ' د'; const h = Math.round(m / 60);
+    if (h < 24) return 'قبل ' + h + ' س'; return dayLabel(new Date(iso));
+  };
+  function renderNotes() {
+    const ns = D().notes.slice().sort((a, b) => (b.created || '').localeCompare(a.created || ''));
+    $('#noteCount').textContent = ns.length ? ns.length + '' : '';
+    $('#notes').innerHTML = ns.map(n => '<li data-note="' + n.id + '"><p>' + esc(n.text).replace(/\n/g, '<br>') + '</p><span class="muted">' + ago(n.created) + '</span><button class="del" aria-label="حذف الملاحظة">' + icon('i-trash') + '</button></li>').join('') || '<li class="empty">ولا ملاحظة للحين</li>';
+  }
+  function addNote(text) {
+    text = String(text || '').trim(); if (!text) return null;
+    const n = { id: S.uid(), text, created: new Date().toISOString() }; D().notes.push(n); S.save(); return n;
+  }
+  const noteTa = $('#noteForm textarea');
+  noteTa.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (addNote(noteTa.value)) noteTa.value = ''; } });
+  $('#notes').addEventListener('click', e => {
+    const li = e.target.closest('[data-note]'); if (!li || !e.target.closest('.del')) return;
+    const snap = snapshot(); D().notes = D().notes.filter(n => n.id !== li.dataset.note); S.save(); toast('انحذفت الملاحظة', () => restore(snap));
+  });
+
+  // ==================== ملخص الأسبوع (كل جمعة) ====================
+  function weekRange(ref) {
+    const end = new Date(ref || new Date());
+    const start = sod(addDays(end, -((end.getDay() + 1) % 7))); // من السبت
+    return { start, end };
+  }
+  const inRange = (iso, r) => iso && new Date(iso) >= r.start && new Date(iso) <= r.end;
+  function weekSummary() {
+    const r = weekRange(), ls = D().lectures, at = k => ls.filter(l => l.at && inRange(l.at[k], r)).length;
+    const tasks = D().tasks.filter(t => t.done && inRange(t.doneAt, r)).length;
+    const wkEnd = addDays(r.start, 7);
+    const evs = D().events.filter(e => evStart(e) >= r.start && evStart(e) < wkEnd).length;
+    const notes = D().notes.filter(n => inRange(n.created, r)).length;
+    const days = []; for (let d = new Date(r.start); d <= r.end; d = addDays(d, 1)) days.push(ymd(d));
+    const water = days.reduce((s, k) => s + hlog(k, 'water'), 0);
+    $('#weekTitle').textContent = 'ملخص الأسبوع · ' + fmtShort.format(r.start) + ' – ' + fmtShort.format(r.end);
+    const stat = (n, label, c) => '<div class="wk-stat" style="--c:' + c + '"><b>' + n + '</b><span>' + label + '</span></div>';
+    $('#weekBody').innerHTML =
+      '<div class="wk-grid">' + stat(at('study'), 'محاضرة ذاكرتها', 'var(--mint)') + stat(at('rev'), 'محاضرة راجعتها', 'var(--amber)') + stat(at('mcq'), 'محاضرة حليت أسئلتها', 'var(--blue)') +
+      stat(tasks, 'مهمة خلصتها', 'var(--coral)') + stat(evs, 'موعد في التقويم', 'var(--violet)') + stat(water, 'كوب ماء', 'var(--cyan)') + '</div>' +
+      '<h3 class="wk-h">العادات</h3><div class="wk-habits">' + D().habits.map(h => {
+        const n = days.filter(k => habitDone(h, k)).length;
+        return '<div><span>' + esc(h.name) + '</span><span class="h-week">' + days.map(k => '<i class="' + (habitDone(h, k) ? 'on' : '') + '"></i>').join('') + '</span><b>' + n + '/' + days.length + '</b></div>';
+      }).join('') + '</div>' +
+      (notes ? '<p class="muted" style="margin-top:10px">كتبت ' + notes + ' ملاحظة هالأسبوع.</p>' : '') +
+      '<p class="wk-msg">' + (at('study') >= 5 ? 'أسبوع قوي، كمل على هالنفس 💪' : at('study') ? 'بداية حلوة، الأسبوع الجاي نزيدها شوي.' : 'هالأسبوع خفيف، الأسبوع الجاي نبدأ بمحاضرة وحدة باليوم.') + '</p>';
+    $('#weekDlg').showModal();
+  }
+  $('#btnWeek').onclick = weekSummary;
+  function maybeFridaySummary() {
+    const now = new Date(); if (now.getDay() !== 5) return;
+    const k = 'madar.week.' + ymd(now);
+    try { if (localStorage.getItem(k)) return; localStorage.setItem(k, '1'); } catch (e) { return; }
+    setTimeout(weekSummary, 1200);
+  }
+
+  // ==================== المزامنة ====================
+  const SYNC_TXT = { idle: '', syncing: 'يتزامن…', ok: 'متزامن', offline: 'بدون نت', error: 'تعذرت المزامنة' };
+  function renderSync(s) {
+    const el = $('#syncState'); el.dataset.s = s; el.querySelector('span').textContent = SYNC_TXT[s] || '';
+  }
+  $('#btnSyncShare').onclick = async () => {
+    const link = window.Sync ? Sync.link() : '';
+    if (!link) return;
+    try { if (navigator.share) { await navigator.share({ title: 'ربط مدار', url: link }); return; } } catch (e) { }
+    try { await navigator.clipboard.writeText(link); toast('نسخت الرابط، افتحه في الجوال مرة وحدة'); }
+    catch (e) { prompt('انسخ هذا الرابط وافتحه في الجهاز الثاني:', link); }
+  };
+
   // ==================== الرسم ====================
-  function render() { renderTime(); renderNext(); renderHadith(); renderCalendar(); renderDay(); renderLectures(); renderTasks(); }
+  function render() { renderTime(); renderNext(); renderHadith(); renderCalendar(); renderDay(); renderExam(); renderLectures(); renderTasks(); renderHabits(); renderNotes(); }
   S.onChange(render);
   render(); renderFixtures(); loadFixtures();
+  if (window.Sync) { Sync.onState(renderSync); Sync.start(); }
+  maybeFridaySummary();
   say('هلا ' + esc(D().name || 'أصيل') + '. قول لي مواعيدك أو أي شي في بالك وأنا أرتبه.<br><small class="muted">أفهم: «الخميس الجاي الساعة ٤ العصر»، «وش عندي بكرة؟»، «خلصت مذاكرة Coordination»، «متى ماتش الاتحاد؟»</small>');
   replies.hidden = true;
   setInterval(renderTime, 10000);
@@ -669,7 +831,7 @@
   // لحظة وحدة: البطاقات تطفو لمكانها بالترتيب أول ما تفتح. المحتوى ظاهر من الأساس لو GSAP ما وصل.
   window.addEventListener('load', () => {
     if (!window.gsap || reduceMotion) return;
-    const cards = $$('.page-head > *, .block');
+    const cards = $$('.page-head > *, .dash .col > *');
     const tl = gsap.timeline();
     tl.from(cards, { y: 14, opacity: .35, scale: .985, duration: .8, ease: 'expo.out', stagger: .045, clearProps: 'transform,opacity' })
       .from('.prog3 .bar i', { width: 0, duration: 1.1, ease: 'expo.out' }, .25);

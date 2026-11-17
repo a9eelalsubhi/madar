@@ -71,6 +71,15 @@
     ['radio', 'W3', 'Radiological Anatomy of Head and Neck Disease', 1]
   ];
 
+  // العادات اليومية
+  const DEFAULT_HABITS = [
+    { id: 'azkar-am', name: 'أذكار الصباح', icon: 'h-sun', type: 'check' },
+    { id: 'azkar-pm', name: 'أذكار المساء', icon: 'c-deen', type: 'check' },
+    { id: 'quran', name: 'قراءة القرآن', icon: 'h-quran', type: 'check' },
+    { id: 'sport', name: 'الرياضة', icon: 'c-sport', type: 'check' },
+    { id: 'water', name: 'شرب الماء', icon: 'h-drop', type: 'count', target: 8 }
+  ];
+
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const empty = () => ({ v: 2, name: 'أصيل', events: [], tasks: [], lectures: [], subjects: DEFAULT_SUBJECTS.slice(), notified: {} });
 
@@ -90,6 +99,9 @@
       data.v = 2;
     }
     if (!data.subjects || !data.subjects.length) data.subjects = DEFAULT_SUBJECTS.slice();
+    if (!Array.isArray(data.habits) || !data.habits.length) data.habits = DEFAULT_HABITS.map(h => Object.assign({}, h));
+    if (!data.habitLog || typeof data.habitLog !== 'object') data.habitLog = {};
+    if (!Array.isArray(data.notes)) data.notes = [];
     if (!data.seedNBS) {
       NBS_LIST.forEach(([s, w, t, done]) => data.lectures.push({ id: uid(), module: NBS, subject: s, week: w, title: t, study: !!done, rev: false, mcq: false, notes: '' }));
       data.seedNBS = true;
