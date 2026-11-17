@@ -46,7 +46,7 @@
         <div class="cmd-wrap">
           <form class="cmd glass" id="composer" autocomplete="off">
             <button type="button" class="mic" id="mic" aria-label="تكلم"><svg><use href="#i-mic"/></svg></button>
-            <input id="cmd" aria-label="اكتب للمساعد" placeholder="قول أو اكتب: موعد اسنان الخميس ٤ العصر · شربت كاسة ماء · ملاحظة: …" enterkeyhint="send">
+            <input id="cmd" aria-label="اكتب للمساعد" placeholder="قول أو اكتب: موعد اسنان الخميس ٤ العصر · شربت كاسة ماء · خلصت مذاكرة Coordination" enterkeyhint="send">
             <button type="button" class="hist" id="btnHist" aria-label="المحادثة"><svg><use href="#i-chat"/></svg></button>
             <button type="submit" class="send" aria-label="إرسال"><svg><use href="#i-send"/></svg></button>
           </form>
@@ -106,21 +106,14 @@
             <input placeholder="مهمة جديدة…" name="t" aria-label="مهمة جديدة">
           </form>
         </section>
-        <section class="glass panel grow">
-          <div class="panel-h"><h2>ملاحظات سريعة</h2><span class="muted" id="noteCount"></span></div>
-          <form class="note-add" id="noteForm">
-            <textarea name="n" rows="2" placeholder="اكتب أي فكرة… (Enter يحفظ)" aria-label="ملاحظة جديدة"></textarea>
-          </form>
-          <ul class="notes scroll" id="notes"></ul>
+        <section class="glass panel pray-card" aria-label="مواقيت الصلاة">
+          <div class="panel-h"><h2>الصلاة</h2><span class="p-next" id="prayNext"></span></div>
+          <div class="p-grid" id="prayGrid"></div>
         </section>
       </div>
 
       <!-- ٤: الصلاة والتقويم والماتشات -->
       <div class="col side scroll">
-        <section class="glass panel pray-card" aria-label="مواقيت الصلاة">
-          <div class="panel-h"><h2>الصلاة</h2><span class="p-next" id="prayNext"></span></div>
-          <div class="p-grid" id="prayGrid"></div>
-        </section>
         <section class="glass panel cal-card">
           <div class="cal-head">
             <button class="icon-btn sm" id="calPrev" aria-label="الشهر السابق"><svg><use href="#i-chev-r"/></svg></button>

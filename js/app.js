@@ -531,7 +531,7 @@
     const snap0 = snapshot();
     const undo0 = html => { const m = say(html + '<div class="acts">' + undoBtn + '</div>'); m.querySelector('[data-undo]').onclick = () => { restore(snap0); say('رجعتها زي ما كانت.'); }; };
     let mm;
-    if ((mm = ct.match(/^(?:ملاحظ[هة]|ملاحظه|نوت|note|دون|سجل ملاحظ[هة])\s*:?\s*([\s\S]+)/i))) { addNote(mm[1]); undo0('حفظتها في الملاحظات ✓'); return; }
+    if ((mm = ct.match(/^(?:ملاحظ[هة]|ملاحظه|نوت|note|دون|سجل ملاحظ[هة])\s*:?\s*([\s\S]+)/i))) { D().tasks.push({ id: S.uid(), title: mm[1].trim(), done: false, date: null, created: new Date().toISOString() }); S.save(); undo0('حطيتها في المهام ✓'); return; }
     if (/شربت|شرب(?:ت)? (?:كاس|كوب|ماء|مويه)/.test(ct) && /ماء|مويه|موي|كاس|كوب|كاسات|اكواب/.test(ct)) {
       const n = +(ct.match(/(\d+)/) || [])[1] || (/كاسين|كوبين/.test(ct) ? 2 : 1);
       const cur = hlog(todayKey(), 'water'); setHabit('water', cur + n);
@@ -750,6 +750,7 @@
     if (h < 24) return 'قبل ' + h + ' س'; return dayLabel(new Date(iso));
   };
   function renderNotes() {
+    if (!$('#notes')) return;
     const ns = D().notes.slice().sort((a, b) => (b.created || '').localeCompare(a.created || ''));
     $('#noteCount').textContent = ns.length ? ns.length + '' : '';
     $('#notes').innerHTML = ns.map(n => '<li data-note="' + n.id + '"><p>' + esc(n.text).replace(/\n/g, '<br>') + '</p><span class="muted">' + ago(n.created) + '</span><button class="del" aria-label="حذف الملاحظة">' + icon('i-trash') + '</button></li>').join('') || '<li class="empty">ولا ملاحظة للحين</li>';
@@ -759,8 +760,8 @@
     const n = { id: S.uid(), text, created: new Date().toISOString() }; D().notes.push(n); S.save(); return n;
   }
   const noteTa = $('#noteForm textarea');
-  noteTa.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (addNote(noteTa.value)) noteTa.value = ''; } });
-  $('#notes').addEventListener('click', e => {
+  if (noteTa) noteTa.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (addNote(noteTa.value)) noteTa.value = ''; } });
+  if ($('#notes')) $('#notes').addEventListener('click', e => {
     const li = e.target.closest('[data-note]'); if (!li || !e.target.closest('.del')) return;
     const snap = snapshot(); D().notes = D().notes.filter(n => n.id !== li.dataset.note); S.save(); toast('انحذفت الملاحظة', () => restore(snap));
   });
