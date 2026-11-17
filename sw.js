@@ -1,5 +1,5 @@
 /* يخلي مدار يشتغل بدون نت: يحفظ ملفات التطبيق في الجهاز */
-const CACHE = 'madar-v5';
+const CACHE = 'madar-v6';
 const FILES = [
   './', 'index.html', 'css/style.css', 'js/sky.js', 'js/parser.js', 'js/prayer.js', 'js/store.js', 'js/app.js', 'js/fonts.js', 'manifest.webmanifest',
   'assets/img/icon-180.png', 'assets/img/icon-192.png', 'assets/img/icon-512.png'

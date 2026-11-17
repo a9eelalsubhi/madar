@@ -276,6 +276,8 @@
 
   // ==================== المحاضرات ====================
   let subjFilter = '*';
+  let closedGroups = {};
+  try { closedGroups = JSON.parse(localStorage.getItem('madar.closed')) || {}; } catch (e) { closedGroups = {}; }
   const subjOf = id => D().subjects.find(s => s.id === id) || { id: '', name: 'Other', ar: 'أخرى', c: '#bdb4a6' };
   const modules = () => [...new Set(D().lectures.map(l => l.module || 'بدون موديول'))];
   const curModule = () => D().module && modules().includes(D().module) ? D().module : (modules()[0] || '');
@@ -308,13 +310,15 @@
       if (onlyLeft) ls = ls.filter(l => !(l.study && l.rev && l.mcq));
       if (!ls.length) continue;
       ls.sort((a, b) => wk(a) - wk(b));
-      html += '<div class="lgroup" style="--c:' + s.c + '"><div class="lghead">' + subjIcon(s.id) + '<b>' + esc(s.name) + '</b><span class="bar"><i style="width:' + pct(done, total) + '%"></i></span><small>' + done + '/' + total + '</small></div>' +
+      const gid = (s.id || 'other');
+      if (closedGroups[gid] === undefined) closedGroups[gid] = done === total; // المواد اللي خلصتها تنطوي من نفسها
+      html += '<div class="lgroup' + (closedGroups[gid] ? ' closed' : '') + '" style="--c:' + s.c + '" data-g="' + gid + '"><button class="lghead" aria-expanded="' + !closedGroups[gid] + '">' + icon('i-chev-d').replace('<svg>', '<svg class="chev">') + subjIcon(s.id).replace('<svg>', '<svg class="sic">') + '<b>' + esc(s.name) + '</b><span class="tag">' + done + '/' + total + '</span><span class="bar"><i style="width:' + pct(done, total) + '%"></i></span></button><div class="lrows">' +
         ls.map(l => '<div class="lrow' + (l.study && l.rev && l.mcq ? ' full' : '') + '" data-lec="' + l.id + '">' +
           '<span class="wk">' + esc(l.week || '—') + '</span>' +
           '<button class="tt" data-edit title="' + esc(l.title) + '">' + esc(l.title) + '</button>' +
           ['study', 'rev', 'mcq'].map(k => '<button class="ck' + (l[k] ? ' on' : '') + '" data-k="' + k + '" aria-pressed="' + !!l[k] + '" aria-label="' + ({ study: 'مذاكرة', rev: 'مراجعة', mcq: 'أسئلة' }[k]) + ' ' + esc(l.title) + '">' + icon('i-tick') + '</button>').join('') +
           '<button class="nt' + (l.notes || l.link || l.fileId ? ' has' : '') + '" data-edit aria-label="ملاحظات">' + icon(l.fileId ? 'i-file' : l.link ? 'i-link' : 'i-note') + '</button>' +
-          '</div>').join('') + '</div>';
+          '</div>').join('') + '</div></div>';
     }
     $('#lecTable').innerHTML = html || '<div class="empty">' + icon('i-book') + (onlyLeft ? 'خلصت كل شي هنا، عاش!' : 'ما فيه محاضرات. قول للمساعد: «اضف محاضرة Physiology of pain لمادة الفسيو»') + '</div>';
   }
@@ -322,6 +326,13 @@
   $('#subjChips').addEventListener('click', e => { const b = e.target.closest('[data-sf]'); if (b) { subjFilter = b.dataset.sf; renderLectures(); } });
   $('#onlyLeft').addEventListener('change', renderLectures);
   $('#lecTable').addEventListener('click', e => {
+    const gh = e.target.closest('.lghead');
+    if (gh) {
+      const g = gh.parentElement, id = g.dataset.g;
+      closedGroups[id] = !closedGroups[id]; g.classList.toggle('closed', !!closedGroups[id]); gh.setAttribute('aria-expanded', !closedGroups[id]);
+      try { localStorage.setItem('madar.closed', JSON.stringify(closedGroups)); } catch (err) { }
+      return;
+    }
     const row = e.target.closest('[data-lec]'); if (!row) return;
     const l = D().lectures.find(x => x.id === row.dataset.lec); if (!l) return;
     const ck = e.target.closest('[data-k]');
@@ -397,7 +408,7 @@
     const open = D().tasks.filter(t => !t.done);
     const doneToday = D().tasks.filter(t => t.done && t.doneAt && t.doneAt.slice(0, 10) === today);
     $('#taskCount').textContent = open.length ? open.length + ' مفتوحة' : 'كل شي خالص';
-    $('#tasksOpen').innerHTML = open.concat(doneToday).map(taskLi).join('') || '<li class="empty" style="padding:8px">ولا مهمة، مرتاح</li>';
+    $('#tasksOpen').innerHTML = open.concat(doneToday).map(taskLi).join('') || '<li class="empty">ولا مهمة، مرتاح</li>';
   }
   document.addEventListener('click', e => {
     const li = e.target.closest('[data-task]'); if (!li) return;
@@ -438,7 +449,7 @@
           if (st && (st.completed || st.state === 'post')) return null;
           const comp = c.competitors.map(x => ({ id: x.team.id, name: x.team.displayName, logo: (x.team.logos && x.team.logos[0] && x.team.logos[0].href) || x.team.logo || '', home: x.homeAway === 'home' }));
           return { date: e.date, timeValid: c.timeValid !== false, league: (e.league && LEAGUES[e.league.slug]) || (e.league && e.league.name) || '', home: comp.find(x => x.home) || comp[0], away: comp.find(x => !x.home) || comp[1] };
-        }).filter(x => x && new Date(x.date).getTime() > now - 3 * 3600000).sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 3);
+        }).filter(x => x && new Date(x.date).getTime() > now - 3 * 3600000).sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 6);
         fx[t.id] = { at: now, rows };
       } catch (e) { /* بدون نت: نخلي آخر نسخة */ }
     }
@@ -451,7 +462,11 @@
       const data = fx[t.id], rows = data ? data.rows.filter(r => new Date(r.date).getTime() > Date.now() - 3 * 3600000) : [];
       if (!rows.length) return '<article class="fx ' + t.cls + '"><div class="fh"><b>' + t.name + '</b> · المباراة القادمة</div><p class="muted" style="margin-top:8px">' + (data ? 'ما فيه مباريات مجدولة' : 'تنزل المواعيد أول ما يتوفر نت') + '</p></article>';
       const m = rows[0], d = new Date(m.date);
-      const more = rows.slice(1).map(r => '<div><span>' + esc(arName(r.home.name)) + ' × ' + esc(arName(r.away.name)) + '</span><span>' + fxShort.format(new Date(r.date)) + ' · ' + (r.timeValid ? tTxt(new Date(r.date)) : 'لم يحدد') + '</span></div>').join('');
+      const more = rows.slice(1).map(r => {
+        const opp = String(r.home.id) === String(t.id) ? r.away : r.home, home = String(r.home.id) === String(t.id);
+        return '<div>' + (opp.logo ? '<img src="' + esc(opp.logo) + '" alt="" loading="lazy">' : '<span class="ph">' + esc(arName(opp.name).slice(0, 2)) + '</span>') +
+          '<span>' + (home ? 'ضد ' : 'عند ') + esc(arName(opp.name)) + '</span><em>' + fxShort.format(new Date(r.date)) + ' · ' + (r.timeValid ? tTxt(new Date(r.date)) : 'لم يحدد') + '</em></div>';
+      }).join('');
       const old = data && Date.now() - data.at > 6 * 3600000;
       return '<article class="fx ' + t.cls + '"><div class="fh"><b>' + t.name + '</b> · المباراة القادمة</div>' +
         '<div class="main">' + badge(m.home) + '<div class="mid"><b>' + fxFmt.format(d) + '</b><small>' + (m.timeValid ? tTxt(d) + ' · ' : 'الوقت لم يحدد · ') + esc(m.league) + '</small></div>' + badge(m.away) + '</div>' +
@@ -637,17 +652,6 @@
   };
 
   // ==================== الجوال: نقاط الأقسام ====================
-  const board = $('#board'), cols = $$('.col', board);
-  const ORDER = ['col-day', 'col-lec', 'col-side', 'col-time'];
-  const LABELS = { 'col-day': 'اليوم', 'col-lec': 'المحاضرات', 'col-side': 'التقويم والماتشات', 'col-time': 'الصلاة' };
-  $('#dots').innerHTML = ORDER.map((c, i) => '<button data-go="' + c + '" class="' + (i ? '' : 'on') + '">' + LABELS[c] + '</button>').join('');
-  $('#dots').addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) $('.' + b.dataset.go).scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' }); });
-  if ('IntersectionObserver' in window) {
-    const io = new IntersectionObserver(ents => ents.forEach(en => {
-      if (en.isIntersecting && en.intersectionRatio > .6) { const c = ORDER.find(k => en.target.classList.contains(k)); $$('#dots button').forEach(b => b.classList.toggle('on', b.dataset.go === c)); }
-    }), { root: board, threshold: [.6] });
-    cols.forEach(c => io.observe(c));
-  }
 
   // ==================== الرسم ====================
   function render() { renderTime(); renderNext(); renderHadith(); renderCalendar(); renderDay(); renderLectures(); renderTasks(); }
@@ -665,7 +669,7 @@
   // لحظة وحدة: البطاقات تطفو لمكانها بالترتيب أول ما تفتح. المحتوى ظاهر من الأساس لو GSAP ما وصل.
   window.addEventListener('load', () => {
     if (!window.gsap || reduceMotion) return;
-    const cards = $$('.topbar > *, .glass, .fx');
+    const cards = $$('.page-head > *, .block');
     const tl = gsap.timeline();
     tl.from(cards, { y: 14, opacity: .35, scale: .985, duration: .8, ease: 'expo.out', stagger: .045, clearProps: 'transform,opacity' })
       .from('.prog3 .bar i', { width: 0, duration: 1.1, ease: 'expo.out' }, .25);
