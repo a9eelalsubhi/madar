@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>مدار</title>
-  <meta name="description" content="لوحتي: التقويم والمهام والمحاضرات ومساعد يفهم كلامي، في صفحة وحدة.">
-  <meta name="theme-color" content="#121418">
+  <meta name="description" content="لوحتي: يومي، محاضراتي، مهامي، الصلاة والماتشات، ومساعد يفهم كلامي — في شاشة وحدة.">
+  <meta name="theme-color" content="#1c1a17">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,110 +13,108 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/img/icon-192.png">
   <link rel="apple-touch-icon" href="assets/img/icon-180.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=Noto+Kufi+Arabic:wght@700;900&display=swap">
+  <script src="js/fonts.js"></script>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="app">
-    <!-- الهيدر -->
-    <header class="top">
-      <div class="greet">
-        <h1 id="greeting">مساء الخير</h1>
-        <p class="dates"><span id="gdate"></span><span class="sep">·</span><span id="hdate"></span></p>
-      </div>
-      <div class="clock" id="clock">--:--</div>
-      <button class="icon-btn" id="btnSettings" aria-label="الإعدادات"><svg><use href="#i-gear"/></svg></button>
-    </header>
+  <div class="bg" aria-hidden="true"></div>
 
-    <main class="grid">
-      <!-- المساعد -->
-      <section class="card agent" id="agentCard">
-        <header class="card-h">
-          <span class="ic"><svg><use href="#i-spark"/></svg></span>
-          <div><h2>المساعد</h2><p class="muted">قول أو اكتب، وأنا أرتبها</p></div>
-        </header>
-        <div class="chat" id="chat"></div>
-        <div class="chips" id="chips">
-          <button>عندي موعد اسنان الخميس الجاي الساعة ٤ العصر</button>
-          <button>وش عندي بكرة؟</button>
-          <button>خلصت مذاكرة Coordination</button>
-          <button>ماتش ارسنال السبت الساعة ٧:٣٠ م</button>
-        </div>
-        <form class="composer" id="composer" autocomplete="off">
+  <div class="shell">
+    <!-- الشريط العلوي: الاسم، والمساعد في الوسط -->
+    <header class="topbar">
+      <div class="brand">
+        <h1 class="wordmark">مدار</h1>
+        <p class="greet" id="greeting"></p>
+      </div>
+      <div class="cmd-wrap">
+        <form class="cmd" id="composer" autocomplete="off">
           <button type="button" class="mic" id="mic" aria-label="تكلم"><svg><use href="#i-mic"/></svg></button>
-          <input id="cmd" placeholder="مثلاً: اجتماع الأحد الساعة ٩ الليل" enterkeyhint="send">
+          <input id="cmd" aria-label="اكتب للمساعد" placeholder="قول أو اكتب: عندي موعد اسنان الخميس الجاي الساعة ٤ العصر" enterkeyhint="send">
+          <button type="button" class="hist" id="btnHist" aria-label="المحادثة"><svg><use href="#i-chat"/></svg></button>
           <button type="submit" class="send" aria-label="إرسال"><svg><use href="#i-send"/></svg></button>
         </form>
-      </section>
+        <div class="replies" id="replies" hidden><div class="chat" id="chat"></div></div>
+      </div>
+      <div class="top-mini">
+        <span class="mini-clock" id="miniClock"></span>
+        <span class="mini-pray" id="miniPray"></span>
+        <button class="icon-btn" id="btnSettings" aria-label="الإعدادات"><svg><use href="#i-gear"/></svg></button>
+      </div>
+    </header>
 
-      <!-- الجاي -->
-      <section class="card next" id="nextCard"></section>
+    <main class="board" id="board">
+      <!-- العمود ١: الوقت والصلاة والحديث -->
+      <div class="col col-time" data-panel="الوقت">
+        <section class="glass clock-card">
+          <div class="big-clock"><span id="clock">--:--</span><small id="ampm"></small></div>
+          <p class="big-date" id="gdate"></p>
+          <p class="hij" id="hdate"></p>
+        </section>
+        <section class="glass pray-card" aria-label="مواقيت الصلاة">
+          <div class="p-head"><h2>مواقيت الصلاة</h2><span class="muted">مكة المكرمة</span></div>
+          <p class="p-next" id="prayNext"></p>
+          <div class="p-grid" id="prayGrid"></div>
+        </section>
+        <section class="glass hadith-card" id="hadithCard" aria-label="حديث اليوم"></section>
+      </div>
 
-      <!-- حديث اليوم -->
-      <section class="card hadith" id="hadithCard"></section>
+      <!-- العمود ٢: اليوم -->
+      <div class="col col-day" data-panel="اليوم">
+        <section class="glass day-card">
+          <div class="next" id="nextCard"></div>
+          <div class="day-head">
+            <div><h2 id="dayTitle"></h2><p class="muted" id="daySub"></p></div>
+            <div class="day-nav">
+              <button class="icon-btn sm" id="dayPrev" aria-label="اليوم السابق"><svg><use href="#i-chev-r"/></svg></button>
+              <button class="icon-btn sm" id="dayNext" aria-label="اليوم التالي"><svg><use href="#i-chev-l"/></svg></button>
+              <button class="btn sm" data-add-event><svg><use href="#i-plus"/></svg>موعد</button>
+            </div>
+          </div>
+          <div class="agenda scroll" id="agenda"></div>
+        </section>
+      </div>
 
-      <!-- التقويم -->
-      <section class="card cal">
-        <header class="card-h">
-          <span class="ic"><svg><use href="#i-cal"/></svg></span>
-          <div><h2 id="calTitle"></h2><p class="muted" id="calHijri"></p></div>
-          <div class="nav">
+      <!-- العمود ٣: المحاضرات -->
+      <div class="col col-lec" data-panel="المحاضرات">
+        <section class="glass lec-card">
+          <div class="lec-head">
+            <div class="lec-title"><h2 id="modTitle">المحاضرات</h2><p class="muted" id="modSub"></p></div>
+            <select class="mini-select" id="modSelect" aria-label="الموديول"></select>
+            <button class="btn sm" id="btnAddLecture"><svg><use href="#i-plus"/></svg>محاضرة</button>
+          </div>
+          <div class="prog3" id="prog3"></div>
+          <div class="subj-chips" id="subjChips"></div>
+          <div class="lec-tools">
+            <label class="switch"><input type="checkbox" id="onlyLeft"><span></span>اللي باقي بس</label>
+            <div class="lcols-h"><span>مذاكرة</span><span>مراجعة</span><span>MCQ</span></div>
+          </div>
+          <div class="ltable scroll" id="lecTable"></div>
+        </section>
+      </div>
+
+      <!-- العمود ٤: التقويم والمهام والماتشات -->
+      <div class="col col-side" data-panel="التقويم">
+        <section class="glass cal-card">
+          <div class="cal-head">
             <button class="icon-btn sm" id="calPrev" aria-label="الشهر السابق"><svg><use href="#i-chev-r"/></svg></button>
-            <button class="btn ghost sm" id="calToday">اليوم</button>
+            <div class="cal-t"><h2 id="calTitle"></h2><p class="muted" id="calHijri"></p></div>
             <button class="icon-btn sm" id="calNext" aria-label="الشهر التالي"><svg><use href="#i-chev-l"/></svg></button>
           </div>
-        </header>
-        <div class="cal-dow"><span>أحد</span><span>اثنين</span><span>ثلاثاء</span><span>أربعاء</span><span>خميس</span><span>جمعة</span><span>سبت</span></div>
-        <div class="cal-grid" id="calGrid"></div>
-      </section>
-
-      <!-- اليوم المختار -->
-      <section class="card day">
-        <header class="card-h">
-          <span class="ic"><svg><use href="#i-clock"/></svg></span>
-          <div><h2 id="dayTitle"></h2><p class="muted" id="daySub"></p></div>
-          <button class="btn sm" data-add-event><svg><use href="#i-plus"/></svg>موعد</button>
-        </header>
-        <div class="agenda" id="agenda"></div>
-      </section>
-
-      <!-- المحاضرات -->
-      <section class="card lectures">
-        <header class="card-h wrap">
-          <span class="ic"><svg><use href="#i-book"/></svg></span>
-          <div><h2 id="modTitle">المحاضرات</h2><p class="muted" id="modSub"></p></div>
-          <select class="mini-select" id="modSelect" aria-label="الموديول"></select>
-          <button class="btn sm" id="btnAddLecture"><svg><use href="#i-plus"/></svg>محاضرة</button>
-        </header>
-        <div class="prog3" id="prog3"></div>
-        <div class="subj-chips" id="subjChips"></div>
-        <div class="lec-tools">
-          <label class="switch"><input type="checkbox" id="onlyLeft"><span></span>اللي باقي بس</label>
-          <span class="muted small">اضغط الدائرة تحطها ✓ · اضغط اسم المحاضرة تعدلها</span>
-        </div>
-        <div class="ltable" id="lecTable"></div>
-      </section>
-
-      <!-- المهام -->
-      <section class="card tasks">
-        <header class="card-h">
-          <span class="ic"><svg><use href="#i-check"/></svg></span>
-          <div><h2>المهام</h2><p class="muted" id="taskCount"></p></div>
-        </header>
-        <form class="quickadd" id="taskForm">
-          <input placeholder="وش في بالك؟ اكتبه وارتاح منه" name="t"><button class="btn sm" aria-label="إضافة"><svg><use href="#i-plus"/></svg></button>
-        </form>
-        <ul class="tasklist" id="tasksOpen"></ul>
-        <details class="done-wrap" id="doneWrap">
-          <summary id="doneSum">خلصت</summary>
-          <ul class="tasklist done" id="tasksDone"></ul>
-        </details>
-      </section>
+          <div class="cal-dow"><span>ح</span><span>ن</span><span>ث</span><span>ر</span><span>خ</span><span>ج</span><span>س</span></div>
+          <div class="cal-grid" id="calGrid"></div>
+        </section>
+        <section class="glass tasks-card">
+          <div class="t-head"><h2>المهام</h2><span class="muted" id="taskCount"></span></div>
+          <form class="quickadd" id="taskForm">
+            <input placeholder="وش في بالك؟" name="t" aria-label="مهمة جديدة"><button class="icon-btn sm" aria-label="إضافة"><svg><use href="#i-plus"/></svg></button>
+          </form>
+          <ul class="tasklist scroll" id="tasksOpen"></ul>
+        </section>
+        <section class="fixtures" id="fixtures" aria-label="الماتشات الجاية"></section>
+      </div>
     </main>
 
-    <button class="fab" id="fab" aria-label="تكلم مع المساعد"><svg><use href="#i-mic"/></svg></button>
+    <nav class="dots" id="dots" aria-label="الأقسام"></nav>
   </div>
 
   <!-- نافذة الموعد -->
@@ -197,23 +195,20 @@
         <div><b>نسخة احتياطية</b><p class="muted">بياناتك في جهازك. نزّل نسخة كل فترة.</p></div>
         <div class="btns"><button type="button" class="btn sm" id="btnExport">تنزيل</button><label class="btn sm ghost">استرجاع<input type="file" id="importFile" accept="application/json" hidden></label></div>
       </div>
-      <p class="muted center small">مدار · يشتغل بدون نت · كل شي محفوظ في جهازك</p>
+      <p class="muted center small">مدار · يشتغل بدون نت · مواعيد الماتشات من ESPN</p>
     </form>
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
 
-  <!-- الأيقونات -->
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <svg width="0" height="0" style="position:absolute;top:0;left:0;overflow:hidden" aria-hidden="true">
     <defs>
       <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
-      <symbol id="i-check" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="m8 12 3 3 5-6"/></symbol>
       <symbol id="i-tick" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
       <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
       <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4M8 21h8"/></symbol>
       <symbol id="i-send" viewBox="0 0 24 24"><path d="M21 3 3 10.5l7 3 3 7.5z"/><path d="m10 13.5 4-4"/></symbol>
-      <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3c.5 4.5 3 7 7.5 7.5-4.5.5-7 3-7.5 7.5-.5-4.5-3-7-7.5-7.5 4.5-.5 7-3 7.5-7.5z"/><path d="M19 3v3M17.5 4.5h3"/></symbol>
-      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+      <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
       <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
       <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
       <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
@@ -226,8 +221,6 @@
       <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol>
       <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></symbol>
       <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
-      <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></symbol>
-      <!-- التصنيفات -->
       <symbol id="c-study" viewBox="0 0 24 24"><path d="M4 4h6a3 3 0 0 1 2 1 3 3 0 0 1 2-1h6v15h-6a2 2 0 0 0-2 2 2 2 0 0 0-2-2H4z"/><path d="M12 5v16"/></symbol>
       <symbol id="c-exam" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3"/></symbol>
       <symbol id="c-health" viewBox="0 0 24 24"><path d="M20.8 8.6a5 5 0 0 0-8.8-3.2A5 5 0 0 0 3.2 8.6C3.2 14 12 20 12 20s8.8-6 8.8-11.4z"/><path d="M5 12h3l1.5-2.5 3 5 1.5-2.5h4"/></symbol>
@@ -238,7 +231,6 @@
       <symbol id="c-match" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8l3.5 2.5-1.3 4h-4.4l-1.3-4z"/><path d="M12 3v5M15.5 10.5l4.8-1.6M14.2 14.5l3 4M9.8 14.5l-3 4M8.5 10.5 3.7 8.9"/></symbol>
       <symbol id="c-project" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></symbol>
       <symbol id="c-personal" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
-      <!-- المواد -->
       <symbol id="s-anatomy" viewBox="0 0 24 24"><path d="M15.5 4.5a2.5 2.5 0 0 1 4 3 2.5 2.5 0 0 1-3 4L11.5 16.5a2.5 2.5 0 0 1-4 3 2.5 2.5 0 0 1-3-4 2.5 2.5 0 0 1 4-3L13.5 7.5a2.5 2.5 0 0 1 2-3z"/></symbol>
       <symbol id="s-embryo" viewBox="0 0 24 24"><path d="M12 21v-9"/><path d="M12 12C12 7.5 8.5 5 4.5 5c0 4 3 7 7.5 7z"/><path d="M12 14.5c0-4 3-6.5 7.5-6.5 0 3.8-2.8 6.5-7.5 6.5z"/></symbol>
       <symbol id="s-histo" viewBox="0 0 24 24"><path d="M6 21h12M10 3.5l4 2-3.5 7-4-2z"/><path d="M12.5 10.5a5 5 0 0 1 2.5 7.5M8.5 18h7"/></symbol>
@@ -254,6 +246,7 @@
   </svg>
 
   <script src="js/parser.js"></script>
+  <script src="js/prayer.js"></script>
   <script src="js/store.js"></script>
   <script src="js/app.js"></script>
 </body>

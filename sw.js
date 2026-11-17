@@ -1,8 +1,8 @@
 /* يخلي مدار يشتغل بدون نت: يحفظ ملفات التطبيق في الجهاز */
-const CACHE = 'madar-v3';
+const CACHE = 'madar-v4';
 const FILES = [
-  './', 'index.html', 'css/style.css', 'js/parser.js', 'js/store.js', 'js/app.js', 'manifest.webmanifest',
-  'assets/img/icon-180.png', 'assets/img/icon-192.png', 'assets/img/icon-512.png'
+  './', 'index.html', 'css/style.css', 'js/parser.js', 'js/prayer.js', 'js/store.js', 'js/app.js', 'js/fonts.js', 'manifest.webmanifest',
+  'assets/img/icon-180.png', 'assets/img/icon-192.png', 'assets/img/icon-512.png', 'assets/img/desert.webp'
 ];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
@@ -10,18 +10,18 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
-// النت أولاً (عشان التحديثات توصلك)، وإذا ما فيه نت → النسخة المحفوظة
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
-  // خطوط Google (في النسخة المنشورة): تنحفظ أول مرة وبعدها تشتغل بدون نت
-  if (/^fonts\.(googleapis|gstatic)\.com$/.test(url.hostname)) {
+  // شعارات الفرق: تنحفظ أول مرة وبعدها تطلع بدون نت
+  if (url.hostname === 'a.espncdn.com') {
     e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).then(res => {
       const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return res;
     })));
     return;
   }
   if (url.origin !== location.origin) return;
+  // النت أولاً (عشان التحديثات توصلك)، وإذا ما فيه نت → النسخة المحفوظة
   e.respondWith(
     fetch(e.request).then(res => {
       const copy = res.clone();
