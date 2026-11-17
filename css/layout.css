@@ -39,10 +39,10 @@
 .next .in { font-size: 22px; margin-top: 4px; }
 
 /* الامتحان */
-.exam { border-radius: var(--r); background: linear-gradient(150deg, rgba(238, 108, 131, .2), rgba(255, 255, 255, .04) 70%); border: 1px solid rgba(238, 108, 131, .3); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); padding: 10px 14px; }
+.exam { border-radius: var(--r); background: linear-gradient(150deg, rgba(127, 184, 255, .2), rgba(255, 255, 255, .04) 70%); border: 1px solid rgba(127, 184, 255, .3); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); padding: 10px 14px; }
 .exam-main { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; cursor: pointer; }
 .exam-days { text-align: center; line-height: 1; }
-.exam-days b { display: block; font-size: 34px; font-weight: 700; color: #ffc2cd; font-variant-numeric: tabular-nums; }
+.exam-days b { display: block; font-size: 34px; font-weight: 700; color: #cfe4ff; font-variant-numeric: tabular-nums; }
 .exam-days small { font-size: 12px; color: var(--ink-2); }
 .exam-txt { display: flex; flex-direction: column; min-width: 0; }
 .exam-txt b { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -88,7 +88,7 @@
 
 /* الملاحظات */
 .note-add textarea { width: 100%; resize: none; background: rgba(0, 0, 0, .18); border: 1px solid var(--line-2); border-radius: 10px; padding: 8px 10px; outline: 0; font-size: 14.5px; line-height: 1.5; }
-.note-add textarea:focus { border-color: rgba(238, 108, 131, .55); }
+.note-add textarea:focus { border-color: rgba(127, 184, 255, .55); }
 .notes { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; flex: 1; }
 .notes li { position: relative; padding: 7px 8px; border-radius: 8px; background: rgba(255, 255, 255, .035); }
 .notes li:hover { background: var(--hover); }
@@ -121,7 +121,7 @@ dialog.sheet.wide { width: min(620px, calc(100vw - 24px)); }
 .wk-h { font-size: 15px; margin: 16px 0 6px; }
 .wk-habits div { display: grid; grid-template-columns: 1fr auto 44px; gap: 10px; align-items: center; padding: 6px 2px; border-bottom: 1px solid var(--line); font-size: 14px; }
 .wk-habits b { text-align: left; font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink-2); }
-.wk-msg { margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: rgba(238, 108, 131, .1); font-size: 14px; }
+.wk-msg { margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: rgba(127, 184, 255, .1); font-size: 14px; }
 
 /* لابتوب وتابلت وجوال */
 @media (max-width: 1360px) and (min-width: 1101px) {

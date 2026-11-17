@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>مدار</title>
   <meta name="description" content="لوحتي: يومي، محاضراتي، مهامي، الصلاة والماتشات، ومساعد يفهم كلامي — في شاشة وحدة.">
-  <meta name="theme-color" content="#1c0c15">
+  <meta name="theme-color" content="#0a1330">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,14 +16,20 @@
   <script src="js/fonts.js"></script>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/sky.css">
 </head>
 <body>
-  <div class="sky" aria-hidden="true"><canvas id="stars"></canvas></div>
+  <div class="sky" aria-hidden="true">
+    <canvas id="milky"></canvas>
+    <div class="aurora"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
+    <canvas id="stars"></canvas>
+    <svg class="ridge" viewBox="0 0 1440 220" preserveAspectRatio="none"><path class="r1" d="M0 150 L90 118 L160 140 L250 92 L330 128 L410 80 L470 104 L560 60 L640 112 L720 86 L800 126 L880 70 L960 110 L1040 88 L1120 130 L1210 96 L1290 124 L1370 100 L1440 118 V220 H0Z"/><path class="r2" d="M0 186 L120 160 L210 176 L320 148 L420 172 L540 140 L650 170 L760 150 L870 178 L990 146 L1100 172 L1220 154 L1330 176 L1440 160 V220 H0Z"/></svg>
+  </div>
 
   <div class="page">
     <header class="page-head">
       <div class="head-row">
-        <span class="mark" aria-hidden="true"></span>
+        <img class="logo" src="assets/img/logo-white.png" alt="أصيل">
         <h1 class="title" id="greeting">مساء الخير</h1>
         <div class="props">
           <span id="gdate"></span><span class="sep">·</span><span id="hdate"></span><span class="sep">·</span><span class="clock"><span id="clock"></span> <span id="ampm"></span></span>
