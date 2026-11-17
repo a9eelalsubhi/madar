@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/sky.css">
+  <link rel="stylesheet" href="css/calendar.css">
 </head>
 <body>
   <div class="sky" aria-hidden="true">
@@ -125,6 +126,7 @@
             <button class="icon-btn sm" id="calPrev" aria-label="الشهر السابق"><svg><use href="#i-chev-r"/></svg></button>
             <div class="cal-t"><h2 id="calTitle"></h2><p class="muted" id="calHijri"></p></div>
             <button class="icon-btn sm" id="calNext" aria-label="الشهر التالي"><svg><use href="#i-chev-l"/></svg></button>
+            <button class="icon-btn sm" id="calExpand" aria-label="التقويم الكامل" title="التقويم الكامل"><svg><use href="#i-expand"/></svg></button>
           </div>
           <div class="cal-dow"><span>ح</span><span>ن</span><span>ث</span><span>ر</span><span>خ</span><span>ج</span><span>س</span></div>
           <div class="cal-grid" id="calGrid"></div>
@@ -133,6 +135,33 @@
       </div>
     </main>
   </div>
+
+  <!-- التقويم الكامل -->
+  <dialog id="calDlg" class="calfull" aria-label="التقويم الكامل">
+    <div class="cf-wrap">
+      <header class="cf-head">
+        <div class="cf-title"><h2 id="cfTitle"></h2><span class="muted" id="cfHijri"></span></div>
+        <div class="cf-nav">
+          <button class="icon-btn" id="cfPrev" aria-label="الشهر السابق"><svg><use href="#i-chev-r"/></svg></button>
+          <button class="btn ghost sm" id="cfToday">اليوم</button>
+          <button class="icon-btn" id="cfNext" aria-label="الشهر التالي"><svg><use href="#i-chev-l"/></svg></button>
+        </div>
+        <div class="cf-legend" id="cfLegend"></div>
+        <button class="btn sm" id="cfAdd"><svg><use href="#i-plus"/></svg>موعد</button>
+        <button class="icon-btn" id="cfClose" aria-label="إغلاق"><svg><use href="#i-x"/></svg></button>
+      </header>
+      <div class="cf-body">
+        <div class="cf-cal">
+          <div class="cf-dow"><span>الأحد</span><span>الاثنين</span><span>الثلاثاء</span><span>الأربعاء</span><span>الخميس</span><span>الجمعة</span><span>السبت</span></div>
+          <div class="cf-grid" id="cfGrid"></div>
+        </div>
+        <aside class="cf-side glass">
+          <div class="panel-h"><div><h3 id="cfDayTitle"></h3><p class="muted" id="cfDaySub"></p></div><button class="btn ghost sm" data-add-event><svg><use href="#i-plus"/></svg>موعد</button></div>
+          <div class="agenda" id="cfAgenda"></div>
+        </aside>
+      </div>
+    </div>
+  </dialog>
 
   <!-- الدخول للمزامنة -->
   <dialog id="loginDlg" class="sheet">
@@ -253,6 +282,7 @@
       <symbol id="h-drop" viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></symbol>
       <symbol id="h-quran" viewBox="0 0 24 24"><path d="M12 6c-2-1.5-5-2-8-1.5V19c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V4.5c-3-.5-6 0-8 1.5zM12 6v14.5"/></symbol>
       <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5M5 14v6h14v-6"/></symbol>
+      <symbol id="i-expand" viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol>
       <symbol id="i-tick" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
       <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
       <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4M8 21h8"/></symbol>

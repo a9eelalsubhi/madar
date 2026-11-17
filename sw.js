@@ -1,7 +1,7 @@
 /* يخلي مدار يشتغل بدون نت: يحفظ ملفات التطبيق في الجهاز */
-const CACHE = 'madar-v9';
+const CACHE = 'madar-v10';
 const FILES = [
-  './', 'index.html', 'css/style.css', 'css/layout.css', 'css/sky.css', 'assets/img/logo-white.png', 'js/sky.js', 'js/parser.js', 'js/prayer.js', 'js/store.js', 'js/sync.js', 'js/app.js', 'js/fonts.js', 'manifest.webmanifest',
+  './', 'index.html', 'css/style.css', 'css/layout.css', 'css/sky.css', 'css/calendar.css', 'assets/img/logo-white.png', 'js/sky.js', 'js/parser.js', 'js/prayer.js', 'js/store.js', 'js/sync.js', 'js/app.js', 'js/fonts.js', 'manifest.webmanifest',
   'assets/img/icon-180.png', 'assets/img/icon-192.png', 'assets/img/icon-512.png'
 ];
 self.addEventListener('install', e => {

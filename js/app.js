@@ -29,11 +29,12 @@
   const fmtG = new Intl.DateTimeFormat('ar-SA-u-ca-gregory-nu-latn', { weekday: 'long', day: 'numeric', month: 'long' });
   const fmtGY = new Intl.DateTimeFormat('ar-SA-u-ca-gregory-nu-latn', { month: 'long', year: 'numeric' });
   const fmtShort = new Intl.DateTimeFormat('ar-SA-u-ca-gregory-nu-latn', { weekday: 'short', day: 'numeric', month: 'short' });
-  let fmtH, fmtHM;
+  let fmtH, fmtHM, fmtHD;
   try {
     fmtH = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' });
     fmtHM = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-latn', { month: 'long', year: 'numeric' });
-  } catch (e) { fmtH = fmtHM = { format: () => '' }; }
+    fmtHD = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-latn', { day: 'numeric' });
+  } catch (e) { fmtH = fmtHM = fmtHD = { format: () => '' }; }
   const hijri = d => fmtH.format(d).replace(/\s*هـ$/, '') + ' هـ';
   function dayLabel(d) { const x = P.describe(d); return Math.abs(x.diff) <= 2 ? x.day + ' ' + x.date : x.dayName + ' ' + x.date; }
   function inWords(ms) {
@@ -828,8 +829,57 @@
     go.disabled = false;
   });
 
+  // ==================== التقويم الكامل (عرض الشهر) ====================
+  const calDlg = $('#calDlg');
+  let cfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const hhmm = d => pad(d.getHours()) + ':' + pad(d.getMinutes());
+  function renderBigCal() {
+    if (!calDlg.open) return;
+    const first = cfMonth, start = addDays(first, -first.getDay()), now = new Date();
+    $('#cfTitle').textContent = fmtGY.format(first);
+    $('#cfHijri').textContent = fmtHM.format(first) + ' – ' + fmtHM.format(addDays(first, 27));
+    const today = ymd(now), sel = ymd(selDay), used = new Set();
+    let html = '';
+    for (let i = 0; i < 42; i++) {
+      const d = addDays(start, i), k = ymd(d);
+      if (i === 35 && d.getMonth() !== first.getMonth()) break;
+      const evs = eventsOn(d), MAX = 3;
+      evs.forEach(e => used.add(catOk(e.cat)));
+      html += '<div class="cf-cell' + (d.getMonth() !== first.getMonth() ? ' out' : '') + (k === today ? ' today' : '') + (k === sel ? ' sel' : '') + '" data-cday="' + k + '">' +
+        '<div class="cf-n"><span>' + d.getDate() + '</span><small>' + fmtHD.format(d) + '</small></div>' +
+        evs.slice(0, MAX).map(e => '<button class="pill' + (!e.allDay && evEnd(e) < now ? ' past' : '') + '" style="--c:' + cvar(e.cat) + '" data-ev="' + e.id + '" title="' + esc(e.title) + '">' +
+          (e.allDay ? '' : '<b>' + hhmm(evStart(e)) + '</b>') + '<span>' + esc(e.title) + '</span></button>').join('') +
+        (evs.length > MAX ? '<button class="more" data-cday="' + k + '">+' + (evs.length - MAX) + '</button>' : '') + '</div>';
+    }
+    $('#cfGrid').innerHTML = html;
+    $('#cfLegend').innerHTML = [...used].map(c => '<span style="--c:' + cvar(c) + '"><i></i>' + CATS[c] + '</span>').join('');
+    // جدول اليوم المختار
+    const x = P.describe(selDay), evs = eventsOn(selDay);
+    $('#cfDayTitle').textContent = (Math.abs(x.diff) <= 2 ? x.day + ' · ' : '') + fmtG.format(selDay);
+    $('#cfDaySub').textContent = hijri(selDay) + (evs.length ? ' · ' + evs.length + ' مواعيد' : '');
+    $('#cfAgenda').innerHTML = evs.length ? evs.map(e => evRow(e, now)).join('') : '<div class="empty">' + icon('i-cal') + 'ما فيه مواعيد. اضغط مرتين على أي يوم تضيف فيه.</div>';
+  }
+  function openBigCal() {
+    cfMonth = new Date(selDay.getFullYear(), selDay.getMonth(), 1);
+    calDlg.showModal(); renderBigCal();
+    if (window.gsap && !reduceMotion) gsap.from('.cf-cell', { opacity: 0, y: 6, duration: .5, ease: 'expo.out', stagger: .008 });
+  }
+  $('#calExpand').onclick = openBigCal;
+  $('#calTitle').style.cursor = 'pointer'; $('#calTitle').onclick = openBigCal;
+  $('#cfClose').onclick = () => calDlg.close();
+  $('#cfPrev').onclick = () => { cfMonth = new Date(cfMonth.getFullYear(), cfMonth.getMonth() - 1, 1); renderBigCal(); };
+  $('#cfNext').onclick = () => { cfMonth = new Date(cfMonth.getFullYear(), cfMonth.getMonth() + 1, 1); renderBigCal(); };
+  $('#cfToday').onclick = () => { selDay = sod(new Date()); cfMonth = new Date(selDay.getFullYear(), selDay.getMonth(), 1); renderBigCal(); renderCalendar(); renderDay(); };
+  $('#cfAdd').onclick = () => openEvent(null, selDay);
+  $('#cfGrid').addEventListener('click', e => {
+    if (e.target.closest('[data-ev]')) return; // الموعد نفسه يفتح التعديل
+    const c = e.target.closest('[data-cday]'); if (!c) return;
+    selDay = fromYmd(c.dataset.cday); renderBigCal(); renderCalendar(); renderDay();
+  });
+  $('#cfGrid').addEventListener('dblclick', e => { if (e.target.closest('[data-ev]')) return; const c = e.target.closest('[data-cday]'); if (c) openEvent(null, fromYmd(c.dataset.cday)); });
+
   // ==================== الرسم ====================
-  function render() { renderTime(); renderNext(); renderHadith(); renderCalendar(); renderDay(); renderExam(); renderLectures(); renderTasks(); renderHabits(); renderNotes(); }
+  function render() { renderTime(); renderNext(); renderHadith(); renderCalendar(); renderDay(); renderExam(); renderLectures(); renderTasks(); renderHabits(); renderNotes(); renderBigCal(); }
   S.onChange(render);
   render(); renderFixtures(); loadFixtures();
   if (window.Sync) { Sync.onState(renderSync); if (!Sync.start()) setTimeout(() => $('#loginDlg').showModal(), 700); }
