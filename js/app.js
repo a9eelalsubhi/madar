@@ -397,7 +397,7 @@
   $('#lecDelete').onclick = () => {
     if (!editingLec) return;
     const snap = snapshot(), l = editingLec;
-    D().lectures = D().lectures.filter(x => x !== l); S.save(); lecDlg.close();
+    S.forgetLecture(l); D().lectures = D().lectures.filter(x => x !== l); S.save(); lecDlg.close();
     toast('انحذفت المحاضرة', () => restore(snap));
   };
 

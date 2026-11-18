@@ -80,6 +80,10 @@
     { id: 'water', name: 'شرب الماء', icon: 'h-drop', type: 'count', target: 8 }
   ];
 
+  // المحاضرات اللي انحذفت (أصيل طلب شيلها) ما ترجع حتى لو جهاز قديم دمج بياناته
+  const lecKey = l => (l.module || '') + '|' + String(l.title || '').toLowerCase().trim();
+  const REMOVED_SEED = ['functional areas of cerebral cortex', 'brain stem: anatomy, structural and functional', 'cerebellum', 'basal ganglia', 'head and neck embryology', 'neurons and their action', 'neuronal communications', 'physiology of hearing', 'regulation of body functions', 'patterns of injury in nervous system', 'epilepsy (cbl)'].map(t => NBS + '|' + t);
+
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const empty = () => ({ v: 2, name: 'أصيل', events: [], tasks: [], lectures: [], subjects: DEFAULT_SUBJECTS.slice(), notified: {} });
 
@@ -102,11 +106,15 @@
     if (!Array.isArray(data.habits) || !data.habits.length) data.habits = DEFAULT_HABITS.map(h => Object.assign({}, h));
     if (!data.habitLog || typeof data.habitLog !== 'object') data.habitLog = {};
     if (!Array.isArray(data.notes)) data.notes = [];
+    if (!Array.isArray(data.removedLectures)) data.removedLectures = [];
+    if (!data.removedSeed1) { REMOVED_SEED.forEach(k => { if (!data.removedLectures.includes(k)) data.removedLectures.push(k); }); data.removedSeed1 = true; }
     if (!data.seedNBS) {
       NBS_LIST.forEach(([s, w, t, done]) => data.lectures.push({ id: uid(), module: NBS, subject: s, week: w, title: t, study: !!done, rev: false, mcq: false, notes: '' }));
       data.seedNBS = true;
       data.module = NBS;
     }
+    const gone = new Set(data.removedLectures);
+    data.lectures = data.lectures.filter(l => !gone.has(lecKey(l)));
   }
   migrate();
 
@@ -146,7 +154,8 @@
     uid, save,
     onChange(fn) { listeners.push(fn); },
     replace(newData) { data = Object.assign(empty(), newData); migrate(); save(); },
-    putFile, getFile, delFile,
+    putFile, getFile, delFile, lecKey,
+    forgetLecture(l) { const k = lecKey(l); if (!data.removedLectures.includes(k)) data.removedLectures.push(k); },
     DEFAULT_SUBJECTS, NBS
   };
 })(window);

@@ -47,7 +47,9 @@
     out.events = byKey(a.events, b.events, x => x.id);
     out.tasks = byKey(a.tasks, b.tasks, x => x.id);
     out.notes = byKey(a.notes, b.notes, x => x.id);
-    out.lectures = byKey(a.lectures, b.lectures, x => (x.module || '') + '|' + (x.title || '').toLowerCase().trim());
+    out.removedLectures = [...new Set([...(a.removedLectures || []), ...(b.removedLectures || [])])];
+    const gone = new Set(out.removedLectures);
+    out.lectures = byKey(a.lectures, b.lectures, x => (x.module || '') + '|' + (x.title || '').toLowerCase().trim()).filter(x => !gone.has((x.module || '') + '|' + (x.title || '').toLowerCase().trim()));
     const hl = Object.assign({}, a.habitLog);
     Object.entries(b.habitLog || {}).forEach(([d, v]) => {
       hl[d] = Object.assign({}, hl[d]);
