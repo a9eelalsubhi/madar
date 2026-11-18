@@ -14,7 +14,7 @@
   const gauss = () => (rnd() + rnd() + rnd() + rnd() - 2) / 2;
 
   function drawMilky() {
-    if (!mctx) return;
+    if (!mctx || !W || !H || getComputedStyle(mw).display === "none") return;
     mw.width = W * dpr; mw.height = H * dpr; mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     mctx.clearRect(0, 0, W, H);
     seed = 11;
