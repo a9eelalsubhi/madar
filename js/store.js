@@ -45,13 +45,13 @@
     ['physio', 'W2', 'Physiology of Hearing', 1],
     ['physio', 'W2', 'Glia and their functions', 1],
     ['physio', 'W3', 'Regulation of body functions', 1],
-    ['physio', 'W3', 'Coordination', 0],
-    ['physio', 'W3', 'Movement control', 0],
+    ['physio', 'W3', 'The Cerebellum and Motor Coordination', 0],
+    ['physio', 'W3', 'Movement Control: The Basal Ganglia', 0],
     ['physio', 'W4', 'CSF and Blood brain barrier', 0],
     ['physio', 'W4', 'States of consciousness, sleep and coma', 0],
     ['physio', 'W5', 'Physiology of pain', 0],
     ['physio', 'W5', 'Emotion, reward, learning, memory', 0],
-    ['physio', 'W6', 'Autonomic nervous system', 0],
+    ['physio', 'W6', 'Autonomic nervous', 0],
     ['physio', 'W6', 'Physiology of reflex', 0],
     ['patho', 'W1', 'Patterns of injury in nervous system', 1],
     ['patho', 'W2', 'Epilepsy (CBL)', 1],
@@ -66,9 +66,10 @@
     ['pharma', 'W4', 'Antidepressants', 1],
     ['pharma', 'W4', 'Sedative-hypnotic Drugs', 1],
     ['pharma', 'W5', 'Drugs used in movement disorders', 1],
-    ['pharma', 'W5', 'Opioid analgesics', 0],
+    ['pharma', 'W5', 'Opioids analgesics', 0],
     ['pharma', 'W6', 'Antipsychotic Drugs', 0],
-    ['radio', 'W3', 'Radiological Anatomy of Head and Neck Disease', 1]
+    ['radio', 'W3', 'Radiological Anatomy of Head and Neck Disease', 1],
+    ['radio', 'W6', 'Imaging of the Nervous System', 0]
   ];
 
   // العادات اليومية
